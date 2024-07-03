@@ -38,6 +38,7 @@ method2 = "GBM.mean"
 
 tau = (1 : 3) / 4
 
+depth1 = 1 # interaction.depth parameter in the gbm function for estimating ghat and hhat
 depth2 = 3 # interaction.depth parameter in the gbm function for estimating muhat
 ds = T
 cross = T
@@ -55,7 +56,7 @@ cross = T
 theta0 = 0.6385743 # p1 = 1, homo
 ######################
 
-r = 500
+r = 1000
 
 output = foreach(i = 1 : r, .combine = rbind) %dopar%
   {
@@ -85,7 +86,7 @@ output = foreach(i = 1 : r, .combine = rbind) %dopar%
     CIO = bound(thetahatO + c(-1, 1) * 1.96 * sdhatO)
     
     c( ( c(thetahat, thetahatzero, thetahatO) - theta0 ) ^ 2,
-       apply( rbind(CI, CIzero, CIO), 1, CIL ), apply( rbind(CIzero, CI, CIO), 1, function(x) cover(theta0, x) ) )
+       apply( rbind(CI, CIzero, CIO), 1, CIL ), apply( rbind(CI, CIzero, CIO), 1, function(x) cover(theta0, x) ) )
     
   }
 

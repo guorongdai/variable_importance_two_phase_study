@@ -8,7 +8,7 @@ suppressMessages({
 })
 
 registerDoParallel(255) # set multicores
-r = 500
+r = 1000
 true.value = matrix(c(0.9992909, 0.9985872, 0.7131335, 0.8265324), 2, 2)
 
 source("/home/guorongdai/TPD/TPD_Functions.R")
@@ -26,6 +26,7 @@ method2 = "GBM.mean"
 
 tau = (1 : 3) / 4
 
+depth1 = 1 # interaction.depth parameter in the gbm function for estimating ghat and hhat
 depth2 = 3 # interaction.depth parameter in the gbm function for estimating muhat
 ds = T
 cross = T
@@ -35,7 +36,7 @@ CI = matrix(0, 12, 12)
 
 ss = 789
 
-for(j1 in 2) # 1 mean; 2 quantiles
+for(j1 in 1 : 2) # 1 mean; 2 quantiles
 {
   
   if(j1 == 1)
@@ -73,6 +74,11 @@ for(j1 in 2) # 1 mean; 2 quantiles
           
           n = c(300, 600, 1200)[j4]
           
+          # condition1 = (j4 %in% c(2, 3)) & (j1 == 1)
+          # condition2 = (j4 == 3) & (j1 == 2)
+          # ss = 777
+          # if( (condition1 | condition2) & (j2 == 1) ) ss = 789
+          
           output = foreach(i = 1 : r, .combine = rbind) %dopar%
             {
               
@@ -106,6 +112,9 @@ for(j1 in 2) # 1 mean; 2 quantiles
         
         if(j3 == 2)
         {
+          
+          # ss = 789
+          # if( (j4 %in% c(1, 2)) & (j1 == 1) ) ss = 777
           
           output = foreach(i = 1 : r, .combine = rbind) %dopar%
             {

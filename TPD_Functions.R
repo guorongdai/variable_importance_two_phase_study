@@ -3,11 +3,6 @@ suppressMessages({
   if (!require(randomForest)) install.packages('randomForest', repos =
                                                  'https://cran.revolutionanalytics.com/')
   
-  #  if (!require(quantregForest)) install.packages('quantregForest', repos =
-  #                                                   'https://cran.revolutionanalytics.com/')
-  
-  #  if (!require(quantreg)) install.packages('quantreg', repos =
-  #                                             'https://cran.revolutionanalytics.com/')
   
   if (!require(gbm)) install.packages('gbm', repos =
                                         'https://cran.revolutionanalytics.com/')
@@ -25,8 +20,6 @@ suppressMessages({
                                          'https://cran.revolutionanalytics.com/')                                    
   
   library(randomForest)
-  #  library(quantregForest)
-  #  library(quantreg)
   library(gbm)
   library(mgcv)
   library(xgboost)
@@ -84,7 +77,6 @@ MVIM.TPD.B = function(Y, X, Z, R, pi, K, method1, method2, tau = NULL, loss, dep
   
   N = length(Y)
   
-  W = cbind(as.matrix(Y), X)
   U = cbind(X, Z)
   S = R / pi
   
@@ -211,7 +203,7 @@ NF.Est.B = function(Y, X, Z, R, pi, K, M, method1, method2, loss, tau, depth1, d
   
   result = matrix(0, n, M)
   
-  W = cbind(as.matrix(Y), X)
+  W = cbind( as.matrix(Y), numeric(length(Y)) )
   
   for(k in 1 : (K - 1))
   {
@@ -223,7 +215,7 @@ NF.Est.B = function(Y, X, Z, R, pi, K, M, method1, method2, loss, tau, depth1, d
     Z.fit = as.matrix(Z[-ind, ])
     R.fit = R[-ind]
     pi.fit = pi[-ind]
-    W.predict = W[ind, ]
+    W.predict = as.matrix(W[ind, ])
     
     NF.fit = TS.NP.DS.B(Y.fit, X.fit, Z.fit, R.fit, pi.fit, W.predict, M, method1, method2, loss, tau, depth1, depth2)
     
@@ -238,7 +230,7 @@ NF.Est.B = function(Y, X, Z, R, pi, K, M, method1, method2, loss, tau, depth1, d
   Z.fit = as.matrix(Z[-ind, ])
   R.fit = R[-ind]
   pi.fit = pi[-ind]
-  W.predict = W[ind, ]
+  W.predict = as.matrix(W[ind, ])
   
   NF.fit = TS.NP.DS.B(Y.fit, X.fit, Z.fit, R.fit, pi.fit, W.predict, M, method1, method2, loss, tau, depth1, depth2)
   
@@ -260,7 +252,7 @@ TS.NP.DS.B = function(Y, X, Z, R, pi, W.predict, M, method1, method2, loss, tau 
   
   ob = which(R == 1)
   
-  W = cbind(as.matrix(Y), X)
+  W = cbind( as.matrix(Y), numeric(length(Y)) )
   U = cbind(X, Z)
   
   result = matrix(0, nrow(W.predict), M)
@@ -282,14 +274,14 @@ TS.NP.DS.B = function(Y, X, Z, R, pi, W.predict, M, method1, method2, loss, tau 
     if(loss == "quadratic")
     {
       vetilde.ds = quadratic(Y[ind2] - gtilde.ds[, 1])
-      result = result + CM.Est.B(vetilde.ds, W[ind2, ], weights = NULL, W.predict, method2, tau = NULL, depth2) / 2
+      result = result + CM.Est.B(vetilde.ds, as.matrix(W[ind2, ]), 1 / pi[ind2], W.predict, method2, tau = NULL, depth2) / 2
     }
     
     if(loss == "check")
     {
       
       vetilde.ds = multiple.check(Y[ind2], gtilde.ds, tau)
-      result = result + apply( vetilde.ds, 2, function(y) CM.Est.B(y, W[ind2, ], weights = NULL, W.predict, method2, tau = NULL, depth2) ) / 2
+      result = result + apply( vetilde.ds, 2, function(y) CM.Est.B(y, as.matrix(W[ind2, ]), 1 / pi[ind2], W.predict, method2, tau = NULL, depth2) ) / 2
       
     }
     
@@ -382,7 +374,8 @@ MVIM.TPD = function(Y, X, Z, K, method1, method2, tau = NULL, loss, depth1 = NUL
   n = nrow(Z)
   deltan = n / N
   
-  W = cbind(as.matrix(Y), X)
+  W = cbind( as.matrix(Y), numeric(length(Y)) )
+
   U = cbind(X[1 : n, ], Z)
   Y.II = Y[1 : n]
   
@@ -409,9 +402,9 @@ MVIM.TPD = function(Y, X, Z, K, method1, method2, tau = NULL, loss, depth1 = NUL
   
   if(ds == T)
   {
-    muhat = NF.Est(Y.II, as.matrix(X[1 : n, ]), Z, W[-(1 : n), ], K, M, method1, method2, loss, tau, depth1, depth2, cross)
+    muhat = NF.Est(Y.II, as.matrix(X[1 : n, ]), Z, as.matrix(W[-(1 : n), ]), K, M, method1, method2, loss, tau, depth1, depth2, cross)
   } else {
-    muhat = NF.no.DS(vehat, W[1 : n, ], W[-(1 : n), ], K, M, method2, depth2)
+    muhat = NF.no.DS(vehat, as.matrix(W[1 : n, ]), as.matrix(W[-(1 : n), ]), K, M, method2, depth2)
   }
   muhat.II = as.matrix(muhat[1 : n, ])
   
@@ -558,7 +551,7 @@ NF.Est = function(Y.II, X.II, Z, W.I, K, M, method1, method2, loss, tau = NULL, 
   result.I = matrix(0, NO, M)
   result.II = matrix(0, n, M)
   
-  W.II = cbind(as.matrix(Y.II), X.II)
+  W.II = cbind( as.matrix(Y.II), numeric(length(Y.II)) )
   
   for(k in 1 : (K - 1))
   {
@@ -569,7 +562,7 @@ NF.Est = function(Y.II, X.II, Z, W.I, K, M, method1, method2, loss, tau = NULL, 
     Y.fit = Y.II[-ind]
     X.fit = as.matrix(X.II[-ind, ])
     Z.fit = as.matrix(Z[-ind, ])
-    W.predict = rbind(W.II[ind, ], W.I)
+    W.predict = rbind(as.matrix(W.II[ind, ]), W.I)
     
     NF.fit = TS.NP.DS(Y.fit, X.fit, Z.fit, W.predict, M, method1, method2, loss, tau, depth1, depth2, cross)
     
@@ -584,7 +577,7 @@ NF.Est = function(Y.II, X.II, Z, W.I, K, M, method1, method2, loss, tau = NULL, 
   Y.fit = Y.II[-ind]
   X.fit = as.matrix(X.II[-ind, ])
   Z.fit = as.matrix(Z[-ind, ])
-  W.predict = rbind(W.II[ind, ], W.I)
+  W.predict = rbind(as.matrix(W.II[ind, ]), W.I)
   
   NF.fit = TS.NP.DS(Y.fit, X.fit, Z.fit, W.predict, M, method1, method2, loss, tau, depth1, depth2, cross)
   
@@ -605,7 +598,8 @@ TS.NP.DS = function(Y, X, Z, W.predict, M, method1, method2, loss, tau = NULL, d
   
   n.half = floor(n / 2)
   
-  W = cbind(as.matrix(Y), X)
+  W = cbind( as.matrix(Y), numeric(length(Y)) )
+  
   U = cbind(X, Z)
   
   result = matrix(0, nrow(W.predict), M)
@@ -634,14 +628,14 @@ TS.NP.DS = function(Y, X, Z, W.predict, M, method1, method2, loss, tau = NULL, d
     if(loss == "quadratic")
     {
       vehat.ds = quadratic(Y[ind2] - ghat.ds[, 1])
-      result = result + CM.Est(vehat.ds, W[ind2, ], W.predict, method2, tau = NULL, depth2) / J
+      result = result + CM.Est(vehat.ds, as.matrix(W[ind2, ]), W.predict, method2, tau = NULL, depth2) / J
     }
     
     if(loss == "check")
     {
       
       vehat.ds = multiple.check(Y[ind2], ghat.ds, tau)
-      result = result + apply( vehat.ds, 2, function(y) CM.Est(y, W[ind2, ], W.predict, method2, tau = NULL, depth2) ) / J
+      result = result + apply( vehat.ds, 2, function(y) CM.Est(y, as.matrix(W[ind2, ]), W.predict, method2, tau = NULL, depth2) ) / J
       
     }
     
@@ -683,8 +677,8 @@ CM.Est = function(Y.fit, X.fit, X.predict, method, tau = NULL, depth = NULL)
                 interaction.depth = depth, bag.fraction = 0.5, train.fraction = 1,
                 n.minobsinnode = 10, cv.folds = 5, keep.data = TRUE,
                 verbose = F, n.cores = 1)
-    best.iter = gbm.perf(model, plot.it = F, method = "cv")
-    data.predict = data.frame( numeric(nrow(X.predict)), X.predict )
+    best.iter = gbm.perf(model, plot.it = F, method = "cv") 
+    data.predict = data.frame( numeric(nrow(X.predict)), X.predict)
     result = predict(model, newdata = data.predict, n.trees = best.iter, type = "response")
     sink(NULL)
     
@@ -779,9 +773,7 @@ outcome.generator = function(X, Z, model)
   if(model == "homo") 
   {
     
-    Y = 2 * (Z[, 2]) ^ 3 / 5 + sqrt(2) * ( abs(Z[, 1]) + pnorm(X[, 1]) ) * xi 
-    # Y = cos(X[, 1]) + 2 * (Z[, 2]) ^ 3 / 5 + sqrt(2) * ( abs(Z[, 1]) + pnorm(X[, 2]) ) * xi # good model
-    
+    Y = 2 * (Z[, 2]) ^ 3 / 5 + sqrt(2) * ( abs(Z[, 1]) + pnorm(X[, 1]) ) * xi
     
   }
   
@@ -789,7 +781,6 @@ outcome.generator = function(X, Z, model)
   {
     
     Y = 2 * (X[, 1]) ^ 3 / 5 + sqrt(2) * ( abs(Z[, 1]) + pnorm(Z[, 2]) ) * xi
-    # Y = cos(X[, 1]) + 2 * (X[, 2]) ^ 3 / 5 + sqrt(2) * ( abs(Z[, 1]) + pnorm(Z[, 2]) ) * xi # good model
     
   }
   

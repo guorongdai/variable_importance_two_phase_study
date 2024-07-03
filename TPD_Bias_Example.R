@@ -33,10 +33,12 @@ method1 = "GAM.mean"
 if(method1 == "GAM.mean") loss = "quadratic"
 if(method1 == "GAM.quantile") loss = "check"
 
+# method2 = "LR.mean"
 method2 = "GBM.mean"
 
 tau = (1 : 3) / 4
 
+depth1 = 1 # interaction.depth parameter in the gbm function for estimating ghat and hhat
 depth2 = 3 # interaction.depth parameter in the gbm function for estimating muhat
 ds = T
 cross = T
@@ -67,8 +69,7 @@ output = foreach(i = 1 : r, .combine = rbind) %dopar%
     Y = outcome.generator(X, Z, model)
     
     Y.center = ( Y > quantile(Y, 0.25) ) & ( Y < quantile(Y, 0.75) )
-    pi = 0.15 * (1 - Y.center) + 0.05 * Y.center
-    # pi = 0.3 * (1 - Y.center) + 0.1 * Y.center
+    pi = 0.3 * (1 - Y.center) + 0.1 * Y.center
     
     # pitilde = expit(X[, 1] / 2 + Y / 6 - 3 / 2)
     # pi = sapply(pitilde, function(x) min(x, 0.5))
@@ -90,8 +91,10 @@ output = foreach(i = 1 : r, .combine = rbind) %dopar%
     sdtildeO = Est $ sdtildeO
     CIO = bound( thetatildeO + c(-1, 1) * 1.96 * sdtildeO )
     
+    all.CI = rbind(CI, CIzero, CIO)
+    
     c( ( c(thetatilde, thetatildezero, thetatildeO) - theta0 ) ^ 2, 
-       apply( rbind(CI, CIzero, CIO), 1, CIL ), apply( rbind(CIzero, CI, CIO), 1, function(x) cover(theta0, x) ) )
+       apply( all.CI, 1, CIL ), apply( all.CI, 1, function(x) cover(theta0, x) ) )
     
   }
 
